@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require_relative 'base_formatter'
 
 module AwesomePrint
   module Formatters
+    # Formats an arbitrary object by rendering its instance variables and their accessors.
     class ObjectFormatter < BaseFormatter
-
       attr_reader :object, :variables, :inspector, :options
 
       def initialize(object, inspector)
@@ -15,12 +17,12 @@ module AwesomePrint
 
       def format
         vars = variables.map do |var|
-          property = var.to_s[1..-1].to_sym # to_s because of some monkey patching done by Puppet.
+          property = var.to_s[1..].to_sym # to_s because of some monkey patching done by Puppet.
           accessor = if object.respond_to?(:"#{property}=")
-            object.respond_to?(property) ? :accessor : :writer
-          else
-            object.respond_to?(property) ? :reader : nil
-          end
+                       object.respond_to?(property) ? :accessor : :writer
+                     else
+                       object.respond_to?(property) ? :reader : nil
+                     end
           if accessor
             [String.new("attr_#{accessor} :#{property}"), var]
           else
@@ -35,19 +37,19 @@ module AwesomePrint
 
           unless options[:plain]
             if key =~ /(@\w+)/
-              key.sub!($1, colorize($1, :variable))
+              key.sub!(::Regexp.last_match(1), colorize(::Regexp.last_match(1), :variable))
             else
-              key.sub!(/(attr_\w+)\s(\:\w+)/, "#{colorize('\\1', :keyword)} #{colorize('\\2', :method)}")
+              key.sub!(/(attr_\w+)\s(:\w+)/, "#{colorize('\\1', :keyword)} #{colorize('\\2', :method)}")
             end
           end
 
           indented do
-            key << colorize(' = ', :hash) + inspector.awesome(object.instance_variable_get(var))
+            key << (colorize(' = ', :hash) + inspector.awesome(object.instance_variable_get(var)))
           end
         end
 
         if options[:multiline]
-          "#<#{awesome_instance}\n#{data.join(%Q/,\n/)}\n#{outdent}>"
+          "#<#{awesome_instance}\n#{data.join(%(,\n))}\n#{outdent}>"
         else
           "#<#{awesome_instance} #{data.join(', ')}>"
         end
@@ -55,14 +57,10 @@ module AwesomePrint
 
       private
 
-      def valid_instance_var?(variable_name)
-        variable_name.to_s.start_with?('@')
-      end
-
       def awesome_instance
         str = String.new
         str << object.send(options[:class_name]).to_s
-        str << ":0x%08x" % (object.__id__ * 2) if options[:object_id]
+        str << Kernel.format(':0x%08x', object.__id__ * 2) if options[:object_id]
         str
       end
 

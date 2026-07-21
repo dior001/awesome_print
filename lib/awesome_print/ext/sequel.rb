@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -5,7 +7,6 @@
 #------------------------------------------------------------------------------
 module AwesomePrint
   module Sequel
-
     def self.included(base)
       base.send :alias_method, :cast_without_sequel, :cast
       base.send :alias_method, :cast, :cast_with_sequel
@@ -19,7 +20,7 @@ module AwesomePrint
         cast = :sequel_document
       elsif defined?(::Sequel::Model) && object.is_a?(Class) && object.ancestors.include?(::Sequel::Model)
         cast = :sequel_model_class
-      elsif defined?(::Sequel::Mysql2::Dataset) && object.class.ancestors.include?(::Sequel::Mysql2::Dataset)
+      elsif defined?(::Sequel::Dataset) && object.is_a?(::Sequel::Dataset)
         cast = :sequel_dataset
       end
       cast
@@ -28,18 +29,17 @@ module AwesomePrint
     # Format Sequel Document object.
     #------------------------------------------------------------------------------
     def awesome_sequel_document(object)
-      data = object.values.sort_by { |key| key.to_s }.inject({}) do |hash, c|
-        hash[c[0].to_sym] = c[1]
-        hash
+      data = object.values.sort_by(&:to_s).to_h do |c|
+        [c[0].to_sym, c[1]]
       end
-      data = { errors: object.errors, values: data } if !object.errors.empty?
+      data = { errors: object.errors, values: data } unless object.errors.empty?
       "#{object} #{awesome_hash(data)}"
     end
 
     # Format Sequel Dataset object.
     #------------------------------------------------------------------------------
     def awesome_sequel_dataset(dataset)
-      [awesome_array(dataset.to_a), awesome_print(dataset.sql)].join("\n")
+      [awesome_array(dataset.to_a), inspector.awesome(dataset.sql)].join("\n")
     end
 
     # Format Sequel Model class.
@@ -52,7 +52,6 @@ module AwesomePrint
       [name, base, awesome_hash(data)].join(' ')
     end
   end
-
 end
 
-AwesomePrint::Formatter.send(:include, AwesomePrint::Sequel)
+AwesomePrint::Formatter.include AwesomePrint::Sequel

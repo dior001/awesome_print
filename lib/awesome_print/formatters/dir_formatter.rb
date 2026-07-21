@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require_relative 'base_formatter'
 require 'shellwords'
 
 module AwesomePrint
   module Formatters
+    # Formats a Dir, appending an 'ls -alF' style listing of its contents.
     class DirFormatter < BaseFormatter
-
       attr_reader :dir, :inspector, :options
 
       def initialize(dir, inspector)

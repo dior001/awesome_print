@@ -1,7 +1,10 @@
+# frozen_string_literal: true
+
 require_relative 'base_formatter'
 
 module AwesomePrint
   module Formatters
+    # Formats Array (and Set) values, including method-listing arrays, with optional indices and output limiting.
     class ArrayFormatter < BaseFormatter
       attr_reader :array, :inspector, :options
 
@@ -12,7 +15,7 @@ module AwesomePrint
       end
 
       def format
-        if array.length.zero?
+        if array.empty?
           '[]'
         elsif methods_array?
           methods_array
@@ -36,13 +39,13 @@ module AwesomePrint
       end
 
       def multiline_array
-        data = unless should_be_limited?
-                 generate_printable_array
-               else
+        data = if should_be_limited?
                  limited(generate_printable_array, width(array))
+               else
+                 generate_printable_array
                end
 
-        %Q([\n#{data.join(",\n")}\n#{outdent}])
+        %([\n#{data.join(",\n")}\n#{outdent}])
       end
 
       def generate_printable_array
@@ -91,7 +94,7 @@ module AwesomePrint
       def name_and_args_width
         name_and_args = tuples.transpose
 
-        return name_and_args[0].map(&:size).max, name_and_args[1].map(&:size).max
+        [name_and_args[0].map(&:size).max, name_and_args[1].map(&:size).max]
       end
 
       def tuple_prefix(iteration, width)
@@ -123,7 +126,7 @@ module AwesomePrint
         end
       end
 
-      def generic_prefix(iteration, width, padding='')
+      def generic_prefix(iteration, width, padding = '')
         if options[:index]
           indent + colorize("[#{iteration.to_s.rjust(width)}] ", :array)
         else

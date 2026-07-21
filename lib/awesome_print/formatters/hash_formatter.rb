@@ -1,7 +1,10 @@
+# frozen_string_literal: true
+
 require_relative 'base_formatter'
 
 module AwesomePrint
   module Formatters
+    # Formats Hash values with aligned keys, honoring :sort_keys, :ruby19_syntax and output limiting.
     class HashFormatter < BaseFormatter
       attr_reader :hash, :inspector, :options
 
@@ -58,7 +61,7 @@ module AwesomePrint
 
       def left_width(keys)
         result = max_key_width(keys)
-        result += indentation if options[:indent] > 0
+        result += indentation if options[:indent].positive?
         result
       end
 

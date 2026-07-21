@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require_relative 'base_formatter'
 
 module AwesomePrint
   module Formatters
+    # Formats a Class, showing it alongside its superclass.
     class ClassFormatter < BaseFormatter
-
       attr_reader :klass, :inspector, :options
 
       def initialize(klass, inspector)

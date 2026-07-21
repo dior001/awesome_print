@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -8,7 +10,7 @@
 # so do nothing for subsequent requires.
 #
 unless defined?(AwesomePrint::Inspector)
-  %w(awesome_method_array string method object class kernel).each do |file|
+  %w[awesome_method_array string object class kernel].each do |file|
     require "awesome_print/core_ext/#{file}"
   end
 
@@ -31,11 +33,8 @@ unless defined?(AwesomePrint::Inspector)
       require 'awesome_print/ext/action_view'
     end
   end
-  require 'awesome_print/ext/mongo_mapper'   if defined?(MongoMapper)
   require 'awesome_print/ext/mongoid'        if defined?(Mongoid)
   require 'awesome_print/ext/nokogiri'       if defined?(Nokogiri)
-  require 'awesome_print/ext/nobrainer'      if defined?(NoBrainer)
-  require 'awesome_print/ext/ripple'         if defined?(Ripple)
   require 'awesome_print/ext/sequel'         if defined?(Sequel)
   require 'awesome_print/ext/ostruct'        if defined?(OpenStruct)
 end

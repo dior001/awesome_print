@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require_relative 'base_formatter'
 
 module AwesomePrint
   module Formatters
+    # Formats a scalar that is already a string (numbers, BigDecimal, Rational, fallbacks) by colorizing it.
     class SimpleFormatter < BaseFormatter
-
       attr_reader :string, :type, :inspector, :options
 
       def initialize(string, type, inspector)

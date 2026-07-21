@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 RSpec.describe 'AwesomePrint Ostruct extension' do
@@ -12,11 +14,11 @@ RSpec.describe 'AwesomePrint Ostruct extension' do
 
   it 'plain multiline' do
     struct = OpenStruct.new name: 'Foo', address: 'Bar'
-    expect(@ap.send(:awesome, struct)).to eq <<-EOS.strip
-OpenStruct {
-    :address => "Bar",
-       :name => "Foo"
-}
+    expect(@ap.send(:awesome, struct)).to eq <<~EOS.strip
+      OpenStruct {
+          :address => "Bar",
+             :name => "Foo"
+      }
     EOS
   end
 end

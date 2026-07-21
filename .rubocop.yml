@@ -1,2 +1,132 @@
+plugins:
+  - rubocop-rake
+  - rubocop-rspec
+
+inherit_mode:
+  merge:
+    - Exclude
+
 AllCops:
-  DisabledByDefault: false
+  TargetRubyVersion: 2.7
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - 'gemfiles/**/*'
+    - 'vendor/**/*'
+    - 'tmp/**/*'
+
+# Awesome Print is a mature codebase with long, single-purpose formatter
+# methods. The metric cops flag size rather than correctness, so they are
+# relaxed rather than triggering large behavioural rewrites.
+Metrics/AbcSize:
+  Enabled: false
+Metrics/CyclomaticComplexity:
+  Enabled: false
+Metrics/PerceivedComplexity:
+  Enabled: false
+Metrics/MethodLength:
+  Enabled: false
+Metrics/ClassLength:
+  Enabled: false
+Metrics/ModuleLength:
+  Enabled: false
+Metrics/BlockLength:
+  Enabled: false
+
+Layout/LineLength:
+  Max: 120
+  # Specs assert on long, literal colorized-output strings that cannot wrap.
+  Exclude:
+    - 'spec/**/*'
+
+# The gem deliberately monkey-patches core classes (Object, Class, String,
+# Kernel); documenting each is out of scope for this style pass.
+Style/Documentation:
+  Enabled: false
+
+# Formatter output relies on building strings imperatively.
+Style/StringConcatenation:
+  Enabled: false
+
+Naming/PredicatePrefix:
+  Enabled: false
+
+Naming/AccessorMethodName:
+  Enabled: false
+
+Naming/MethodParameterName:
+  Enabled: false
+
+Naming/PredicateMethod:
+  Enabled: false
+
+# The dotfile lives at ENV['HOME'], which the suite stubs; keep it explicit.
+Style/EnvHome:
+  Enabled: false
+
+# The gem intentionally supports and tests OpenStruct.
+Style/OpenStructUse:
+  Enabled: false
+
+# Inspector caches dotfile readability in class variables by design.
+Style/ClassVars:
+  Enabled: false
+
+# Formatters subclass BaseFormatter, which has no initializer to call super on.
+Lint/MissingSuper:
+  Enabled: false
+
+# Boolean-flag methods (force_colors!, String color helpers) read naturally.
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+# Development dependencies live in the gemspec, following the gem's convention.
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
+# RSpec: the suite predates these opinions; keep them from blocking the pass.
+RSpec/ExampleLength:
+  Enabled: false
+RSpec/MultipleExpectations:
+  Enabled: false
+RSpec/InstanceVariable:
+  Enabled: false
+RSpec/DescribeClass:
+  Enabled: false
+RSpec/BeforeAfterAll:
+  Enabled: false
+RSpec/AnyInstance:
+  Enabled: false
+RSpec/ExpectOutput:
+  Enabled: false
+RSpec/LeakyConstantDeclaration:
+  Enabled: false
+RSpec/ContextWording:
+  Enabled: false
+RSpec/MessageSpies:
+  Enabled: false
+RSpec/VerifiedDoubles:
+  Enabled: false
+RSpec/RepeatedDescription:
+  Enabled: false
+RSpec/RepeatedExampleGroupDescription:
+  Enabled: false
+RSpec/MultipleDescribes:
+  Enabled: false
+RSpec/SpecFilePathFormat:
+  Enabled: false
+RSpec/Output:
+  Enabled: false
+RSpec/BeEq:
+  Enabled: false
+
+# Test files legitimately define throwaway classes/constants inside blocks
+# and use conventional heredoc delimiters (EOS).
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - 'spec/**/*'
+Lint/EmptyClass:
+  Exclude:
+    - 'spec/**/*'
+Naming/HeredocDelimiterNaming:
+  Enabled: false

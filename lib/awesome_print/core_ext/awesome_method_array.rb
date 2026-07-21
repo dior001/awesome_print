@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -12,17 +14,16 @@
 #
 # If you could think of a better way please let me know :-)
 #
-module AwesomeMethodArray #:nodoc:
-
-  def -(_other_ary)
+module AwesomeMethodArray # :nodoc:
+  def -(other)
     super.tap do |arr|
-      arr.instance_variable_set(:@__awesome_methods__, self.instance_variable_get(:@__awesome_methods__))
+      arr.instance_variable_set(:@__awesome_methods__, instance_variable_get(:@__awesome_methods__))
     end
   end
 
-  def &(_other_ary)
+  def &(other)
     super.tap do |arr|
-      arr.instance_variable_set(:@__awesome_methods__, self.instance_variable_get(:@__awesome_methods__))
+      arr.instance_variable_set(:@__awesome_methods__, instance_variable_get(:@__awesome_methods__))
     end
   end
 
@@ -54,26 +55,37 @@ module AwesomeMethodArray #:nodoc:
     # let me know: twitter.com/mid -- or just say hi so I know you've read
     # the comment :-)
     #
-    arr = unless blk
-      super(pattern)
-    else
-      super(pattern) do |match|
-        #
-        # The binding can only be used with Ruby-defined methods, therefore
-        # we must rescue potential "ArgumentError: Can't create Binding from
-        # C level Proc" error.
-        #
-        # For example, the following raises ArgumentError since #succ method
-        # is defined in C.
-        #
-        # [ 0, 1, 2, 3, 4 ].grep(1..2, &:succ)
-        #
-        eval("%Q/#{match.to_s.gsub('/', '\/')}/ =~ #{pattern.inspect}", blk.binding) rescue ArgumentError
-        yield match
-      end
-    end
-    arr.instance_variable_set(:@__awesome_methods__, self.instance_variable_get(:@__awesome_methods__))
-    arr.reject! { |item| !(item.is_a?(Symbol) || item.is_a?(String)) } # grep block might return crap.
+    arr = if blk
+            super do |match|
+              #
+              # The binding can only be used with Ruby-defined methods, therefore
+              # we must rescue potential "ArgumentError: Can't create Binding from
+              # C level Proc" error.
+              #
+              # For example, the following raises ArgumentError since #succ method
+              # is defined in C.
+              #
+              # [ 0, 1, 2, 3, 4 ].grep(1..2, &:succ)
+              #
+              begin
+                # Re-run the match inside the block's binding purely so that
+                # `$~`/`$1` are populated when the user's block references them.
+                # `match` is a method name coming from `Array#grep`, and any `/`
+                # is escaped, so this is not attacker-controlled input.
+                # Interpolated form, e.g.: %Q/foo/ =~ /^m(\\d)$/
+                # rubocop:disable Security/Eval, Style/DocumentDynamicEvalDefinition
+                eval("%Q/#{match.to_s.gsub('/', '\/')}/ =~ #{pattern.inspect}", blk.binding, __FILE__, __LINE__)
+                # rubocop:enable Security/Eval, Style/DocumentDynamicEvalDefinition
+              rescue StandardError
+                ArgumentError
+              end
+              yield match
+            end
+          else
+            super(pattern)
+          end
+    arr.instance_variable_set(:@__awesome_methods__, instance_variable_get(:@__awesome_methods__))
+    arr.select! { |item| item.is_a?(Symbol) || item.is_a?(String) } # grep block might return crap.
     arr
   end
 end

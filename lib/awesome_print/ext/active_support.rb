@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -5,7 +7,6 @@
 #------------------------------------------------------------------------------
 module AwesomePrint
   module ActiveSupport
-
     def self.included(base)
       base.send :alias_method, :cast_without_active_support, :cast
       base.send :alias_method, :cast, :cast_with_active_support
@@ -13,14 +14,21 @@ module AwesomePrint
 
     def cast_with_active_support(object, type)
       cast = cast_without_active_support(object, type)
-      if defined?(::ActiveSupport) && defined?(::HashWithIndifferentAccess)
-        if (defined?(::ActiveSupport::TimeWithZone) && object.is_a?(::ActiveSupport::TimeWithZone)) || object.is_a?(::Date)
-          cast = :active_support_time
-        elsif object.is_a?(::HashWithIndifferentAccess)
-          cast = :hash_with_indifferent_access
-        end
+      return cast unless defined?(::ActiveSupport) && defined?(::HashWithIndifferentAccess)
+
+      if active_support_time?(object)
+        cast = :active_support_time
+      elsif object.is_a?(::HashWithIndifferentAccess)
+        cast = :hash_with_indifferent_access
       end
       cast
+    end
+
+    # Dates and ActiveSupport::TimeWithZone values are both rendered through
+    # the time formatter.
+    def active_support_time?(object)
+      (defined?(::ActiveSupport::TimeWithZone) && object.is_a?(::ActiveSupport::TimeWithZone)) ||
+        object.is_a?(::Date)
     end
 
     # Format ActiveSupport::TimeWithZone as standard Time.
@@ -37,11 +45,8 @@ module AwesomePrint
   end
 end
 
-AwesomePrint::Formatter.send(:include, AwesomePrint::ActiveSupport)
+AwesomePrint::Formatter.include AwesomePrint::ActiveSupport
 #
 # Colorize Rails logs.
 #
-if defined?(ActiveSupport::LogSubscriber)
-  AwesomePrint.force_colors! ActiveSupport::LogSubscriber.colorize_logging
-end
-
+AwesomePrint.force_colors! ActiveSupport::LogSubscriber.colorize_logging if defined?(ActiveSupport::LogSubscriber)

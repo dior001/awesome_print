@@ -1,0 +1,23 @@
+{
+  "blocked": false,
+  "blocked_reason": null,
+  "dependency_changes": [
+    "gem rspec: >= 3.0.0 -> ~> 3.13",
+    "gem sqlite3: unversioned -> >= 1.4 (resolves to 2.x)",
+    "gem nokogiri (dev): >= 1.11.0 -> >= 1.11 (resolves to CVE-free 1.19.x)",
+    "removed dev dependency appraisal (multi-gemfile matrix replaced by CI matrix)",
+    "removed dev dependency fakefs (dead, unused)",
+    "added dev dependencies: rake ~> 13.0, rubocop ~> 1.60, rubocop-rake, rubocop-rspec ~> 3.0, simplecov ~> 0.22, bundler-audit ~> 0.9, sequel ~> 5.0",
+    "moved rails (>= 6.1) and mongoid (>= 7.0) into the Gemfile :test group; suite runs against Rails 8.1 and Mongoid 9.1",
+    "removed abandoned integrations mongo_mapper, ripple and nobrainer (deleted their ext + spec files)",
+    "set required_ruby_version to >= 2.7"
+  ],
+  "security_findings": [
+    "bundler-audit: no vulnerabilities found in the resolved dependency graph",
+    "Nokogiri floor (>= 1.11.0) that permitted CVE-affected versions now resolves to a current patched 1.19.x",
+    "Reviewed and documented the Array#grep eval (operates on escaped method names only) and confirmed Dir/File formatters use Shellwords#shellescape",
+    "brakeman: not applicable (targets Rails applications, not libraries)"
+  ],
+  "coverage_before": 91.3,
+  "coverage_after": 100.0
+}

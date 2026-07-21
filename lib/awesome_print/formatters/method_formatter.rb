@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require_relative 'base_formatter'
 
 module AwesomePrint
   module Formatters
+    # Formats a Method or UnboundMethod as owner#name(args).
     class MethodFormatter < BaseFormatter
-
       attr_reader :method, :inspector, :options
 
       def initialize(method, inspector)

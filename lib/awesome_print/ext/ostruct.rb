@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -12,9 +14,7 @@ module AwesomePrint
 
     def cast_with_ostruct(object, type)
       cast = cast_without_ostruct(object, type)
-      if (defined?(::OpenStruct)) && (object.is_a?(::OpenStruct))
-        cast = :open_struct_instance
-      end
+      cast = :open_struct_instance if defined?(::OpenStruct) && object.is_a?(::OpenStruct)
       cast
     end
 
@@ -24,4 +24,4 @@ module AwesomePrint
   end
 end
 
-AwesomePrint::Formatter.send(:include, AwesomePrint::OpenStruct)
+AwesomePrint::Formatter.include AwesomePrint::OpenStruct

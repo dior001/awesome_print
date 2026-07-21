@@ -1,52 +1,62 @@
+# frozen_string_literal: true
+
 module RailsVersions
   def rails_version
     Gem::Version.new(Rails::VERSION::STRING)
   end
 
+  # True for any Rails/ActiveRecord 7.0 or newer. The raw ActiveRecord
+  # instance-variable dump changed shape after 6.1, so 7.0+ shares a single
+  # golden fixture rather than one file per point release.
+  def rails_7_plus?
+    rails_version >= Gem::Version.new('7.0')
+  end
+  alias activerecord_7_plus? rails_7_plus?
+
   def rails_6_1?
     Gem::Requirement.new('~> 6.1.0').satisfied_by?(rails_version)
   end
-  alias_method :activerecord_6_1?, :rails_6_1?
+  alias activerecord_6_1? rails_6_1?
 
   def rails_6_0?
     Gem::Requirement.new('~> 6.0.0').satisfied_by?(rails_version)
   end
-  alias_method :activerecord_6_0?, :rails_6_0?
+  alias activerecord_6_0? rails_6_0?
 
   def rails_5_2?
     Gem::Requirement.new('~> 5.2.0').satisfied_by?(rails_version)
   end
-  alias_method :activerecord_5_2?, :rails_5_2?
+  alias activerecord_5_2? rails_5_2?
 
   def rails_5_1?
     Gem::Requirement.new('~> 5.1.0').satisfied_by?(rails_version)
   end
-  alias_method :activerecord_5_1?, :rails_5_1?
+  alias activerecord_5_1? rails_5_1?
 
   def rails_5_0?
     Gem::Requirement.new('~> 5.0.0.racecar1').satisfied_by?(rails_version)
   end
-  alias_method :activerecord_5_0?, :rails_5_0?
+  alias activerecord_5_0? rails_5_0?
 
   def rails_4_2?
     Gem::Requirement.new('~> 4.2.0').satisfied_by?(rails_version)
   end
-  alias_method :activerecord_4_2?, :rails_4_2?
+  alias activerecord_4_2? rails_4_2?
 
   def rails_4_1?
     Gem::Requirement.new('~> 4.1.0').satisfied_by?(rails_version)
   end
-  alias_method :activerecord_4_1?, :rails_4_1?
+  alias activerecord_4_1? rails_4_1?
 
   def rails_4_0?
     Gem::Requirement.new('~> 4.0.0').satisfied_by?(rails_version)
   end
-  alias_method :activerecord_4_0?, :rails_4_0?
+  alias activerecord_4_0? rails_4_0?
 
   def rails_3_2?
     Gem::Requirement.new('~> 3.2.0').satisfied_by?(rails_version)
   end
-  alias_method :activerecord_3_2?, :rails_3_2?
+  alias activerecord_3_2? rails_3_2?
 end
 
 RSpec.configure do |config|

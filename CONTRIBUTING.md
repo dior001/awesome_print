@@ -22,23 +22,22 @@ Some things that will increase the chance that your pull request is accepted is 
 
 ## Specs
 
-To run all the specs in all gemfiles just run:
+Install dependencies once with `bundle install`, then run the whole suite and
+the linter with:
 
 ```
-$ rake
+$ bundle exec rake
 ```
 
-To run specs of a single gemfile run:
+To run just the tests, or a single spec file:
 
 ```
-$ appraisal rails-3.2 rake
+$ bundle exec rspec
+$ bundle exec rspec spec/colors_spec.rb
 ```
 
-If you want to run a specific spec in a gemfile run:
-
-```
-$ appraisal rails-3.2 rspec spec/colors_spec.rb
-```
+The suite enforces 100% line coverage (via SimpleCov) and a clean RuboCop pass,
+both of which also run in CI across Ruby 2.7–3.4.
 
 ## Contributor Rolecall
 

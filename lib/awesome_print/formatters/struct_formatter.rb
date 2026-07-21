@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require_relative 'base_formatter'
 
 module AwesomePrint
   module Formatters
+    # Formats a Struct as sorted member = value pairs.
     class StructFormatter < BaseFormatter
-
       attr_reader :struct, :variables, :inspector, :options
 
       def initialize(struct, inspector)
@@ -14,40 +16,22 @@ module AwesomePrint
       end
 
       def format
-        vars = variables.map do |var|
-          property = var.to_s[1..-1].to_sym # to_s because of some monkey patching done by Puppet.
-          accessor = if struct.respond_to?(:"#{property}=")
-            struct.respond_to?(property) ? :accessor : :writer
-          else
-            struct.respond_to?(property) ? :reader : nil
-          end
-          if accessor
-            ["attr_#{accessor} :#{property}", var]
-          else
-            [var.to_s, var]
-          end
-        end
-
-        data = vars.sort.map do |declaration, var|
+        # Struct members are bare symbols (`:name`), unlike an object's
+        # `@`-prefixed instance variables, so they are simply rendered as
+        # `member = value` pairs sorted by member name.
+        data = struct.members.sort.map do |member|
+          declaration = member.to_s
           key = left_aligned do
             align(declaration, declaration.size)
           end
 
-          unless options[:plain]
-            if key =~ /(@\w+)/
-              key.sub!($1, colorize($1, :variable))
-            else
-              key.sub!(/(attr_\w+)\s(\:\w+)/, "#{colorize('\\1', :keyword)} #{colorize('\\2', :method)}")
-            end
-          end
-
           indented do
-            key << colorize(' = ', :hash) + inspector.awesome(struct.send(var))
+            key + colorize(' = ', :hash) + inspector.awesome(struct.send(member))
           end
         end
 
         if options[:multiline]
-          "#<#{awesome_instance}\n#{data.join(%Q/,\n/)}\n#{outdent}>"
+          "#<#{awesome_instance}\n#{data.join(",\n")}\n#{outdent}>"
         else
           "#<#{awesome_instance} #{data.join(', ')}>"
         end
@@ -56,7 +40,7 @@ module AwesomePrint
       private
 
       def awesome_instance
-        "#{struct.class.superclass}:#{struct.class}:0x%08x" % (struct.__id__ * 2)
+        Kernel.format("#{struct.class.superclass}:#{struct.class}:0x%08x", struct.__id__ * 2)
       end
 
       def left_aligned

@@ -1,7 +1,14 @@
+# frozen_string_literal: true
+
 require 'net/http'
 require 'spec_helper'
 
 RSpec.describe 'AwesomePrint' do
+  describe 'Version' do
+    it 'exposes a semantic version string' do
+      expect(AwesomePrint.version).to match(/\A\d+\.\d+\.\d+\z/)
+    end
+  end
 
   describe 'Misc' do
     it 'handle weird objects that return nil on inspect' do
@@ -16,7 +23,7 @@ RSpec.describe 'AwesomePrint' do
     it 'handle frozen object.inspect' do
       weird = Class.new do
         def inspect
-          'ice'.freeze
+          'ice'
         end
       end
       expect(weird.new.ai(plain: false)).to eq('ice')
@@ -24,8 +31,8 @@ RSpec.describe 'AwesomePrint' do
 
     # See https://github.com/awesome-print/awesome_print/issues/35
     it 'handle array grep when pattern contains / chapacter' do
-      hash = { '1/x' => 1,  '2//x' => :"2" }
-      grepped = hash.keys.sort.grep(/^(\d+)\//) { $1 }
+      hash = { '1/x' => 1, '2//x' => :'2' }
+      grepped = hash.keys.sort.grep(%r{^(\d+)/}) { Regexp.last_match(1) }
       expect(grepped.ai(plain: true, multiline: false)).to eq('[ "1", "2" ]')
     end
 
@@ -41,7 +48,7 @@ RSpec.describe 'AwesomePrint' do
     it 'returns value passed as a parameter' do
       object = rand
       allow(self).to receive(:puts)
-      expect(ap object).to eq(object)
+      expect(ap(object)).to eq(object)
     end
 
     # Require different file name this time (lib/ap.rb vs. lib/awesome_print).
@@ -67,9 +74,9 @@ RSpec.describe 'AwesomePrint' do
       weird = Class.new do
         # Raises NoMethodError: undefined method `id' when "other" is nil or ENV.
         def ==(other)
-          self.id == other.id
+          id == other.id
         end
-        alias :eql? :==
+        alias_method :eql?, :==
       end
       expect { weird.new.ai }.not_to raise_error
     end
@@ -90,28 +97,28 @@ RSpec.describe 'AwesomePrint' do
 
     it 'wraps ap output with <pre> tag with colorized <kbd>' do
       markup = rand
-      expect(markup.ai(html: true)).to eq(%Q|<pre><kbd style="color:blue">#{markup}</kbd></pre>|)
+      expect(markup.ai(html: true)).to eq(%(<pre><kbd style="color:blue">#{markup}</kbd></pre>))
     end
 
     it 'wraps multiline ap output with <pre> tag with colorized <kbd>' do
       markup = [1, :two, 'three']
-      expect(markup.ai(html: true)).to eq <<-EOS.strip
-<pre>[
-    <kbd style="color:white">[0] </kbd><kbd style="color:blue">1</kbd>,
-    <kbd style="color:white">[1] </kbd><kbd style="color:darkcyan">:two</kbd>,
-    <kbd style="color:white">[2] </kbd><kbd style="color:brown">&quot;three&quot;</kbd>
-]</pre>
+      expect(markup.ai(html: true)).to eq <<~EOS.strip
+        <pre>[
+            <kbd style="color:white">[0] </kbd><kbd style="color:blue">1</kbd>,
+            <kbd style="color:white">[1] </kbd><kbd style="color:darkcyan">:two</kbd>,
+            <kbd style="color:white">[2] </kbd><kbd style="color:brown">&quot;three&quot;</kbd>
+        ]</pre>
       EOS
     end
 
     it 'wraps hash ap output with only an outer <pre> tag' do
       markup = [{ 'hello' => 'world' }]
-      expect(markup.ai(html: true)).to eq <<-EOS.strip
-<pre>[
-    <kbd style="color:white">[0] </kbd>{
-        &quot;hello&quot;<kbd style="color:slategray"> =&gt; </kbd><kbd style="color:brown">&quot;world&quot;</kbd>
-    }
-]</pre>
+      expect(markup.ai(html: true)).to eq <<~EOS.strip
+        <pre>[
+            <kbd style="color:white">[0] </kbd>{
+                &quot;hello&quot;<kbd style="color:slategray"> =&gt; </kbd><kbd style="color:brown">&quot;world&quot;</kbd>
+            }
+        ]</pre>
       EOS
     end
 
@@ -133,16 +140,16 @@ RSpec.describe 'AwesomePrint' do
     end
 
     # See https://github.com/awesome-print/awesome_print/issues/98
-    it 'should properly merge the defaults' do
+    it 'properlies merge the defaults' do
       AwesomePrint.defaults = { indent: -2, sort_keys: true }
       hash = { [0, 0, 255] => :yellow, :red => 'rgb(255, 0, 0)', 'magenta' => 'rgb(255, 0, 255)' }
       out = hash.ai(plain: true)
-      expect(out).to eq <<-EOS.strip
-{
-  [ 0, 0, 255 ] => :yellow,
-  "magenta"     => "rgb(255, 0, 255)",
-  :red          => "rgb(255, 0, 0)"
-}
+      expect(out).to eq <<~EOS.strip
+        {
+          [ 0, 0, 255 ] => :yellow,
+          "magenta"     => "rgb(255, 0, 255)",
+          :red          => "rgb(255, 0, 0)"
+        }
       EOS
     end
   end
@@ -153,7 +160,7 @@ RSpec.describe 'AwesomePrint' do
       @awesome_method = ''.method(:red)
 
       String.instance_eval do
-        define_method :red do   # Method arity is now 0 in Ruby 1.9+.
+        define_method :red do # Method arity is now 0 in Ruby 1.9+.
           "[red]#{self}[/red]"
         end
       end
@@ -169,31 +176,31 @@ RSpec.describe 'AwesomePrint' do
     it 'shoud not raise ArgumentError when formatting HTML' do
       out = 'hello'.ai(color: { string: :red }, html: true)
       if RUBY_VERSION >= '1.9'
-        expect(out).to eq(%Q|<pre>[red]<kbd style="color:red">&quot;hello&quot;</kbd>[/red]</pre>|)
+        expect(out).to eq(%(<pre>[red]<kbd style="color:red">&quot;hello&quot;</kbd>[/red]</pre>))
       else
-        expect(out).to eq(%Q|<pre>[red]&quot;hello&quot;[/red]</pre>|)
+        expect(out).to eq(%(<pre>[red]&quot;hello&quot;[/red]</pre>))
       end
     end
 
     it 'shoud not raise ArgumentError when formatting HTML (shade color)' do
       out = 'hello'.ai(color: { string: :redish }, html: true)
-      expect(out).to eq(%Q|<pre><kbd style="color:darkred">&quot;hello&quot;</kbd></pre>|)
+      expect(out).to eq(%(<pre><kbd style="color:darkred">&quot;hello&quot;</kbd></pre>))
     end
 
     it 'shoud not raise ArgumentError when formatting non-HTML' do
       out = 'hello'.ai(color: { string: :red }, html: false)
-      expect(out).to eq(%Q|[red]"hello"[/red]|)
+      expect(out).to eq(%([red]"hello"[/red]))
     end
 
     it 'shoud not raise ArgumentError when formatting non-HTML (shade color)' do
       out = 'hello'.ai(color: { string: :redish }, html: false)
-      expect(out).to eq(%Q|\e[0;31m"hello"\e[0m|)
+      expect(out).to eq(%(\e[0;31m"hello"\e[0m))
     end
   end
 
   #------------------------------------------------------------------------------
   describe 'Console' do
-    it 'should detect IRB' do
+    it 'detects IRB' do
       class IRB; end
       ENV.delete('RAILS_ENV')
       expect(AwesomePrint.console?).to eq(true)
@@ -201,7 +208,7 @@ RSpec.describe 'AwesomePrint' do
       Object.instance_eval { remove_const :IRB }
     end
 
-    it 'should detect Pry' do
+    it 'detects Pry' do
       class Pry; end
       ENV.delete('RAILS_ENV')
       expect(AwesomePrint.console?).to eq(true)
@@ -209,7 +216,7 @@ RSpec.describe 'AwesomePrint' do
       Object.instance_eval { remove_const :Pry }
     end
 
-    it 'should detect Rails::Console' do
+    it 'detects Rails::Console' do
       class IRB; end
       module Rails; class Console; end; end
       expect(AwesomePrint.console?).to eq(true)
@@ -218,7 +225,7 @@ RSpec.describe 'AwesomePrint' do
       Object.instance_eval { remove_const :Rails }
     end
 
-    it "should detect ENV['RAILS_ENV']" do
+    it "detects ENV['RAILS_ENV']" do
       class Pry; end
       ENV['RAILS_ENV'] = 'development'
       expect(AwesomePrint.console?).to eq(true)
@@ -226,12 +233,12 @@ RSpec.describe 'AwesomePrint' do
       Object.instance_eval { remove_const :Pry }
     end
 
-    it 'should return the actual object when *not* running under console' do
+    it 'returns the actual object when *not* running under console' do
       expect(capture! { ap([1, 2, 3]) }).to eq([1, 2, 3])
       expect(capture! { ap({ a: 1 }) }).to eq({ a: 1 })
     end
 
-    it 'should return nil when running under console' do
+    it 'returns nil when running under console' do
       class IRB; end
       expect(capture! { ap([1, 2, 3]) }).to eq(nil)
       expect(capture! { ap({ a: 1 }) }).to eq(nil)
@@ -246,8 +253,18 @@ RSpec.describe 'AwesomePrint' do
       irb.instance_eval { @context = irb_context }
       AwesomePrint.irb!
       expect(irb).to receive(:puts).with("(Object doesn't support #ai)")
-      expect { irb.output_value }.to_not raise_error
+      expect { irb.output_value }.not_to raise_error
       Object.instance_eval { remove_const :IRB }
+    end
+
+    it 'wires Pry.print to use #ai when Pry is present' do
+      stub_const('Pry', Class.new do
+        class << self; attr_accessor :print; end
+      end)
+      AwesomePrint.pry!
+      output = double('output')
+      expect(output).to receive(:puts).with(42.ai)
+      Pry.print.call(output, 42)
     end
   end
 end

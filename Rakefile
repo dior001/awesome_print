@@ -1,24 +1,12 @@
-require 'rubygems'
+# frozen_string_literal: true
+
 require 'bundler/setup'
+require 'bundler/gem_tasks'
+require 'rspec/core/rake_task'
+require 'rubocop/rake_task'
 
-require 'bundler'
-Bundler::GemHelper.install_tasks
+RSpec::Core::RakeTask.new(:spec)
+RuboCop::RakeTask.new(:rubocop)
 
-task :default do
-  if ENV['BUNDLE_GEMFILE'] =~ /gemfiles/
-    Rake::Task['spec'].invoke
-  else
-    Rake::Task['appraise'].invoke
-  end
-end
-
-task :appraise do
-  exec 'appraisal install && appraisal rake'
-end
-
-desc 'Run all awesome_print gem specs'
-task :spec do
-  # Run plain rspec command without RSpec::Core::RakeTask overrides.
-  exec 'rspec -c spec'
-end
-
+desc 'Run the full test suite and the linter'
+task default: %i[spec rubocop]

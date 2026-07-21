@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 require 'active_record_helper'
 
 RSpec.describe 'AwesomePrint/ActiveRecord', skip: -> { !ExtVerifier.has_rails? }.call do
   describe 'ActiveRecord instance, attributes only (default)' do
     before do
-      ActiveRecord::Base.default_timezone = :utc
+      ActiveRecord.default_timezone = :utc
       @diana = User.new(name: 'Diana', rank: 1, admin: false, created_at: '1992-10-10 12:30:00')
       @laura = User.new(name: 'Laura', rank: 2, admin: true,  created_at: '2003-05-26 14:15:00')
       @ap = AwesomePrint::Inspector.new(plain: true, sort_keys: true)
@@ -12,17 +14,17 @@ RSpec.describe 'AwesomePrint/ActiveRecord', skip: -> { !ExtVerifier.has_rails? }
 
     it 'display single record' do
       out = @ap.awesome(@diana)
-      str = <<-EOS.strip
-#<User:placeholder_id> {
-         :admin => false,
-    :created_at => ?,
-            :id => nil,
-          :name => "Diana",
-          :rank => 1
-}
+      str = <<~EOS.strip
+        #<User:placeholder_id> {
+                 :admin => false,
+            :created_at => ?,
+                    :id => nil,
+                  :name => "Diana",
+                  :rank => 1
+        }
       EOS
 
-			expect(RUBY_VERSION).to be >= '2.5'
+      expect(RUBY_VERSION).to be >= '2.5'
 
       str.sub!('?', '1992-10-10 12:30:00 UTC')
 
@@ -31,23 +33,23 @@ RSpec.describe 'AwesomePrint/ActiveRecord', skip: -> { !ExtVerifier.has_rails? }
 
     it 'display multiple records' do
       out = @ap.awesome([@diana, @laura])
-      str = <<-EOS.strip
-[
-    [0] #<User:placeholder_id> {
-             :admin => false,
-        :created_at => ??,
-                :id => nil,
-              :name => "Diana",
-              :rank => 1
-    },
-    [1] #<User:placeholder_id> {
-             :admin => true,
-        :created_at => ?!,
-                :id => nil,
-              :name => "Laura",
-              :rank => 2
-    }
-]
+      str = <<~EOS.strip
+        [
+            [0] #<User:placeholder_id> {
+                     :admin => false,
+                :created_at => ??,
+                        :id => nil,
+                      :name => "Diana",
+                      :rank => 1
+            },
+            [1] #<User:placeholder_id> {
+                     :admin => true,
+                :created_at => ?!,
+                        :id => nil,
+                      :name => "Laura",
+                      :rank => 2
+            }
+        ]
       EOS
 
       str.sub!('??', '1992-10-10 12:30:00 UTC')
@@ -60,23 +62,23 @@ RSpec.describe 'AwesomePrint/ActiveRecord', skip: -> { !ExtVerifier.has_rails? }
       @diana.save
       @laura.save
       out = @ap.awesome(User.all)
-      str = <<-EOS.strip
-[
-    [0] #<User:placeholder_id> {
-             :admin => false,
-        :created_at => ??,
-                :id => 1,
-              :name => "Diana",
-              :rank => 1
-    },
-    [1] #<User:placeholder_id> {
-             :admin => true,
-        :created_at => ?!,
-                :id => 2,
-              :name => "Laura",
-              :rank => 2
-    }
-]
+      str = <<~EOS.strip
+        [
+            [0] #<User:placeholder_id> {
+                     :admin => false,
+                :created_at => ??,
+                        :id => 1,
+                      :name => "Diana",
+                      :rank => 1
+            },
+            [1] #<User:placeholder_id> {
+                     :admin => true,
+                :created_at => ?!,
+                        :id => 2,
+                      :name => "Laura",
+                      :rank => 2
+            }
+        ]
       EOS
 
       str.sub!('??', '1992-10-10 12:30:00 UTC')
@@ -91,18 +93,18 @@ RSpec.describe 'AwesomePrint/ActiveRecord', skip: -> { !ExtVerifier.has_rails? }
       @ap = AwesomePrint::Inspector.new(plain: true)
     end
 
-    it 'should show the entire record' do
+    it 'shows the entire record' do
       e = Email.create(email_address: 'foo@bar.com')
       u = User.last
       u.emails << e
       email_record = User.joins(:emails).select('users.id, emails.email_address').last
       out = @ap.awesome(email_record)
-      raw_object_string = <<-EOS.strip
-#<User:placeholder_id> {
-               "id" => #{u.id},
-    "email_address" => "#{e.email_address}"
-}
-EOS
+      raw_object_string = <<~EOS.strip
+        #<User:placeholder_id> {
+                       "id" => #{u.id},
+            "email_address" => "#{e.email_address}"
+        }
+      EOS
       expect(out).to be_similar_to(raw_object_string)
     end
   end
@@ -110,7 +112,7 @@ EOS
   #------------------------------------------------------------------------------
   describe 'ActiveRecord instance (raw)' do
     before do
-      ActiveRecord::Base.default_timezone = :utc
+      ActiveRecord.default_timezone = :utc
       @diana = User.new(name: 'Diana', rank: 1, admin: false, created_at: '1992-10-10 12:30:00')
       @laura = User.new(name: 'Laura', rank: 2, admin: true,  created_at: '2003-05-26 14:15:00')
       @ap = AwesomePrint::Inspector.new(plain: true, sort_keys: true, raw: true)
@@ -120,7 +122,9 @@ EOS
       out = @ap.awesome(@diana)
 
       raw_object_string =
-        if activerecord_6_1?
+        if activerecord_7_plus?
+          ActiveRecordData.raw_7_0_diana
+        elsif activerecord_6_1?
           ActiveRecordData.raw_6_1_diana
         elsif activerecord_6_0?
           ActiveRecordData.raw_6_0_diana
@@ -140,6 +144,10 @@ EOS
           ActiveRecordData.raw_3_2_diana
         end
       raw_object_string.sub!('?', '1992-10-10 12:30:00')
+      if ENV['GEN_AR_FIXTURE'] && activerecord_7_plus?
+        File.write('spec/support/active_record_data/7_0_diana.txt',
+                   normalize_object_id_strings(out, {}) + "\n")
+      end
       expect(out).to be_similar_to(raw_object_string)
     end
 
@@ -147,7 +155,9 @@ EOS
       out = @ap.awesome([@diana, @laura])
 
       raw_object_string =
-        if activerecord_6_1?
+        if activerecord_7_plus?
+          ActiveRecordData.raw_7_0_multi
+        elsif activerecord_6_1?
           ActiveRecordData.raw_6_1_multi
         elsif activerecord_6_0?
           ActiveRecordData.raw_6_0_multi
@@ -168,6 +178,10 @@ EOS
         end
       raw_object_string.sub!('?', '1992-10-10 12:30:00')
       raw_object_string.sub!('?', '2003-05-26 14:15:00')
+      if ENV['GEN_AR_FIXTURE'] && activerecord_7_plus?
+        File.write('spec/support/active_record_data/7_0_multi.txt',
+                   normalize_object_id_strings(out, {}) + "\n")
+      end
       expect(out).to be_similar_to(raw_object_string)
     end
   end
@@ -178,33 +192,56 @@ EOS
       @ap = AwesomePrint::Inspector.new(plain: true)
     end
 
-    it 'should print the class' do
-      expect(@ap.awesome(User)).to eq <<-EOS.strip
-class User < ActiveRecord::Base {
-            :id => :integer,
-          :name => :string,
-          :rank => :integer,
-         :admin => :boolean,
-    :created_at => :datetime
-}
+    it 'prints the class' do
+      expect(@ap.awesome(User)).to eq <<~EOS.strip
+        class User < ActiveRecord::Base {
+                    :id => :integer,
+                  :name => :string,
+                  :rank => :integer,
+                 :admin => :boolean,
+            :created_at => :datetime
+        }
       EOS
     end
 
-    it 'should print the class for non-direct subclasses of ActiveRecord::Base' do
+    it 'prints the class for non-direct subclasses of ActiveRecord::Base' do
       out = @ap.awesome(SubUser)
-      expect(out).to eq <<-EOS.strip
-class SubUser < User {
-            :id => :integer,
-          :name => :string,
-          :rank => :integer,
-         :admin => :boolean,
-    :created_at => :datetime
-}
+      expect(out).to eq <<~EOS.strip
+        class SubUser < User {
+                    :id => :integer,
+                  :name => :string,
+                  :rank => :integer,
+                 :admin => :boolean,
+            :created_at => :datetime
+        }
       EOS
     end
 
-    it 'should print ActiveRecord::Base objects (ex. ancestors)' do
+    it 'prints ActiveRecord::Base objects (ex. ancestors)' do
       expect { @ap.awesome(User.ancestors) }.not_to raise_error
+    end
+  end
+
+  #------------------------------------------------------------------------------
+  describe 'ActiveModel::Errors' do
+    before do
+      @ap = AwesomePrint::Inspector.new(plain: true, sort_keys: true)
+    end
+
+    it 'formats the errors together with the model attributes' do
+      user = User.new(name: 'Diana')
+      user.errors.add(:rank, :blank)
+      out = @ap.awesome(user.errors)
+      expect(out).to include(':name => "Diana"')  # base model attribute
+      expect(out).to include(':details =>')       # error details
+      expect(out).to include(':messages =>')      # error messages
+    end
+
+    it 'dumps raw instance variables with :raw => true' do
+      user = User.new
+      user.errors.add(:name, :blank)
+      raw_ap = AwesomePrint::Inspector.new(plain: true, raw: true)
+      expect(raw_ap.awesome(user.errors)).to include('#<ActiveModel::Errors')
     end
   end
 
@@ -214,24 +251,23 @@ class SubUser < User {
       @ap = AwesomePrint::Inspector.new(plain: true)
     end
 
-    it 'should format class methods properly' do
+    it 'formats class methods properly' do
       # spec 1
       out = @ap.awesome(User.methods.grep(/first/))
 
       if RUBY_VERSION >= '3.0.0'
-        expect(out).to match(/\sfirst\(\*\*,\s&&\)/)
+        # Rails 7.1+ adds an anonymous optional positional arg: first(**, ?, &&)
+        expect(out).to match(/\sfirst\(\*\*,.*&&\)/)
       elsif RUBY_VERSION >= '2.7.0'
         if ActiveRecord::VERSION::STRING >= '3.2'
           expect(out).to match(/\sfirst\(\*\*,\s&&\)\s+User/)
         else
           expect(out).to match(/\sfirst\(\*\*,\s&&\)\s+User \(ActiveRecord::Base\)/)
         end
+      elsif ActiveRecord::VERSION::STRING >= '3.2'
+        expect(out).to match(/\sfirst\(\*arg.*?\)\s+User/)
       else
-        if ActiveRecord::VERSION::STRING >= '3.2'
-          expect(out).to match(/\sfirst\(\*arg.*?\)\s+User/)
-        else
-          expect(out).to match(/\sfirst\(\*arg.*?\)\s+User \(ActiveRecord::Base\)/)
-        end
+        expect(out).to match(/\sfirst\(\*arg.*?\)\s+User \(ActiveRecord::Base\)/)
       end
 
       # spec 2
@@ -246,15 +282,11 @@ class SubUser < User {
       out = @ap.awesome(User.methods.grep(/validate/))
       if ActiveRecord::VERSION::MAJOR < 3
         expect(out).to match(/\svalidate\(\*arg.*?\)\s+User \(ActiveRecord::Base\)/)
+      elsif RUBY_VERSION >= '3.0.0'
+        expect(out).to match(/\svalidate\(\*arg.*?\)/)
       else
-        if RUBY_VERSION >= '3.0.0'
-          expect(out).to match(/\svalidate\(\*arg.*?\)/)
-        else
-          expect(out).to match(/\svalidate\(\*arg.*?\)\s+User/)
-        end
+        expect(out).to match(/\svalidate\(\*arg.*?\)\s+User/)
       end
-
     end
   end
 end
-

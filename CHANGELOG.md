@@ -1,5 +1,22 @@
 ## master (unreleased)
 
+### 2.0.0 (modernization)
+  - **Breaking:** removed the abandoned MongoMapper, Ripple and NoBrainer
+    integrations. Supported integrations are now ActiveRecord/ActiveSupport/
+    ActionView, Mongoid, Sequel, Nokogiri and OpenStruct.
+  - **Breaking:** dropped support for end-of-life Rubies; now requires Ruby 2.7+
+    and is tested on Ruby 2.7–3.4 against Rails 6.1–8.x.
+  - Fixed compatibility with modern Rails: `ActiveModel::Errors` formatting no
+    longer relies on the removed `#marshal_dump`, and `ActiveSupport::OrderedHash`
+    usage was replaced with plain (ordered) Hashes.
+  - The Sequel dataset formatter now works with any adapter (previously Mysql2
+    only) and no longer prints to `$stdout` as a side effect.
+  - All source files are frozen-string-literal safe; removed dead pre-Ruby-1.9
+    compatibility shims.
+  - Test suite now runs on RSpec 3 with 100% line coverage enforced via SimpleCov,
+    a RuboCop configuration and clean pass, a bundler-audit security check, and a
+    GitHub Actions CI workflow (replacing Travis/Appraisal).
+  - Added thorough inline (YARD-style) documentation to the public API.
 
 ## 1.9.2
   - Tests work with Ruby 2.6.6, 2.7.2 and 3.0.0

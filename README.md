@@ -1,26 +1,34 @@
 ## Awesome Print ##
 
 [![RubyGems][gem_version_badge]][ruby_gems]
-[![Travis CI][travis_ci_badge]][travis_ci]
-[![Code Climate][code_climate_badge]][code_climate]
-[![Code Climate Coverage][code_climate_coverage_badge]][code_climate]
+[![CI][ci_badge]][ci]
 [![RubyGems][gem_downloads_badge]][ruby_gems]
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/awesome-print/awesome_print?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 
 Awesome Print is a Ruby library that pretty prints Ruby objects in full color
 exposing their internal structure with proper indentation. Rails ActiveRecord
 objects and usage within Rails templates are supported via included mixins.
 
-__NOTE__: awesome_print v1.9.0 may not work on Ruby versions 2.4 or older or Rails versions 4.2 or older.
-The upcoming awesome_print v2.0 will *require* Ruby v1.9.3 or later and Rails v3.0 or later.
+__NOTE__: awesome_print v2.0 *requires* Ruby 2.7 or later and is tested against
+Ruby 2.7–3.4 and Rails 6.1–8.x. The abandoned MongoMapper, Ripple and NoBrainer
+integrations were removed in v2.0; the supported integrations are ActiveRecord /
+ActiveSupport / ActionView, Mongoid, Sequel, Nokogiri and OpenStruct.
 
 ### Installation ###
-    # Installing as Ruby gem
-    $ gem install awesome_print
 
-    # Cloning the repository
-    $ git clone git://github.com/awesome-print/awesome_print.git
+Install the gem directly:
+
+```sh
+$ gem install awesome_print
+```
+
+Or add it to your `Gemfile` (typically in the `:development` group):
+
+```ruby
+gem 'awesome_print', '~> 2.0', group: :development
+```
+
+then run `bundle install`.
 
 ### Usage ###
 
@@ -317,8 +325,8 @@ AwesomePrint.pry!
 ```
 
 ### Logger Convenience Method ###
-awesome_print adds the 'ap' method to the Logger and ActiveSupport::BufferedLogger classes
-letting you call:
+awesome_print adds the 'ap' method to the Logger class (and, by inheritance,
+ActiveSupport::Logger) letting you call:
 
     logger.ap object
 
@@ -383,10 +391,7 @@ http://www.dvorkin.net
 Released under the MIT license. See LICENSE file for details.
 
 [gem_version_badge]: https://img.shields.io/gem/v/awesome_print.svg?style=flat
-[gem_downloads_badge]: http://img.shields.io/gem/dt/awesome_print.svg?style=flat
-[ruby_gems]: http://rubygems.org/gems/awesome_print
-[travis_ci]: http://travis-ci.org/awesome-print/awesome_print
-[travis_ci_badge]: https://img.shields.io/travis/awesome-print/awesome_print/master.svg?style=flat
-[code_climate]: https://codeclimate.com/github/awesome-print/awesome_print
-[code_climate_badge]: http://img.shields.io/codeclimate/github/awesome-print/awesome_print.svg?style=flat
-[code_climate_coverage_badge]: https://codeclimate.com/github/awesome-print/awesome_print/badges/coverage.svg
+[gem_downloads_badge]: https://img.shields.io/gem/dt/awesome_print.svg?style=flat
+[ruby_gems]: https://rubygems.org/gems/awesome_print
+[ci]: https://github.com/awesome-print/awesome_print/actions/workflows/ci.yml
+[ci_badge]: https://github.com/awesome-print/awesome_print/actions/workflows/ci.yml/badge.svg

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -5,7 +7,6 @@
 #------------------------------------------------------------------------------
 module AwesomePrint
   module Mongoid
-
     def self.included(base)
       base.send :alias_method, :cast_without_mongoid, :cast
       base.send :alias_method, :cast, :cast_with_mongoid
@@ -30,11 +31,10 @@ module AwesomePrint
     # Format Mongoid class object.
     #------------------------------------------------------------------------------
     def awesome_mongoid_class(object)
-      return object.inspect if !defined?(::ActiveSupport::OrderedHash) || !object.respond_to?(:fields)
+      return object.inspect if !defined?(::ActiveSupport) || !object.respond_to?(:fields)
 
-      data = object.fields.sort_by { |key| key }.inject(::ActiveSupport::OrderedHash.new) do |hash, c|
-        hash[c[1].name.to_sym] = (c[1].type || 'undefined').to_s.underscore.intern
-        hash
+      data = object.fields.sort.to_h do |c|
+        [c[1].name.to_sym, (c[1].type || 'undefined').to_s.underscore.intern]
       end
 
       name = "class #{awesome_simple(object.to_s, :class)}"
@@ -46,13 +46,12 @@ module AwesomePrint
     # Format Mongoid Document object.
     #------------------------------------------------------------------------------
     def awesome_mongoid_document(object)
-      return object.inspect if !defined?(::ActiveSupport::OrderedHash)
+      return object.inspect unless defined?(::ActiveSupport)
 
-      data = (object.attributes || {}).sort_by { |key| key }.inject(::ActiveSupport::OrderedHash.new) do |hash, c|
-        hash[c[0].to_sym] = c[1]
-        hash
+      data = (object.attributes || {}).sort.to_h do |c|
+        [c[0].to_sym, c[1]]
       end
-      data = { errors: object.errors, attributes: data } if !object.errors.empty?
+      data = { errors: object.errors, attributes: data } unless object.errors.empty?
       "#{object} #{awesome_hash(data)}"
     end
 
@@ -64,4 +63,4 @@ module AwesomePrint
   end
 end
 
-AwesomePrint::Formatter.send(:include, AwesomePrint::Mongoid)
+AwesomePrint::Formatter.include AwesomePrint::Mongoid

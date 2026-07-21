@@ -1,11 +1,21 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 RSpec.describe 'AwesomePrint' do
-  def stub_tty!(output = true, stream = STDOUT)
+  def stub_tty!(output = true, stream = $stdout)
     if output
-      stream.instance_eval { def tty?;  true; end }
+      stream.instance_eval do
+        def tty?
+          true
+        end
+      end
     else
-      stream.instance_eval { def tty?; false; end }
+      stream.instance_eval do
+        def tty?
+          false
+        end
+      end
     end
   end
 
@@ -30,34 +40,28 @@ RSpec.describe 'AwesomePrint' do
       end
 
       it "colorizes processes with ENV['ANSICON'] by default" do
-        begin
-          stub_tty!
-          term = ENV['ANSICON']
-          ENV['ANSICON'] = '1'
-          expect(@arr.ai(multiline: false)).to eq(COLORIZED)
-        ensure
-          ENV['ANSICON'] = term
-        end
+        stub_tty!
+        term = ENV.fetch('ANSICON', nil)
+        ENV['ANSICON'] = '1'
+        expect(@arr.ai(multiline: false)).to eq(COLORIZED)
+      ensure
+        ENV['ANSICON'] = term
       end
 
       it 'does not colorize tty processes running in dumb terminals by default' do
-        begin
-          stub_tty!
-          term = ENV['TERM']
-          ENV['TERM'] = 'dumb'
-          expect(@arr.ai(multiline: false)).to eq(PLAIN)
-        ensure
-          ENV['TERM'] = term
-        end
+        stub_tty!
+        term = ENV.fetch('TERM', nil)
+        ENV['TERM'] = 'dumb'
+        expect(@arr.ai(multiline: false)).to eq(PLAIN)
+      ensure
+        ENV['TERM'] = term
       end
 
       it 'does not colorize subprocesses by default' do
-        begin
-          stub_tty! false
-          expect(@arr.ai(multiline: false)).to eq(PLAIN)
-        ensure
-          stub_tty!
-        end
+        stub_tty! false
+        expect(@arr.ai(multiline: false)).to eq(PLAIN)
+      ensure
+        stub_tty!
       end
     end
 
@@ -72,34 +76,28 @@ RSpec.describe 'AwesomePrint' do
       end
 
       it "colorizes processes with ENV['ANSICON'] set to 0" do
-        begin
-          stub_tty!
-          term = ENV['ANSICON']
-          ENV['ANSICON'] = '1'
-          expect(@arr.ai(multiline: false)).to eq(COLORIZED)
-        ensure
-          ENV['ANSICON'] = term
-        end
+        stub_tty!
+        term = ENV.fetch('ANSICON', nil)
+        ENV['ANSICON'] = '1'
+        expect(@arr.ai(multiline: false)).to eq(COLORIZED)
+      ensure
+        ENV['ANSICON'] = term
       end
 
       it 'colorizes dumb terminals' do
-        begin
-          stub_tty!
-          term = ENV['TERM']
-          ENV['TERM'] = 'dumb'
-          expect(@arr.ai(multiline: false)).to eq(COLORIZED)
-        ensure
-          ENV['TERM'] = term
-        end
+        stub_tty!
+        term = ENV.fetch('TERM', nil)
+        ENV['TERM'] = 'dumb'
+        expect(@arr.ai(multiline: false)).to eq(COLORIZED)
+      ensure
+        ENV['TERM'] = term
       end
 
       it 'colorizes subprocess' do
-        begin
-          stub_tty! false
-          expect(@arr.ai(multiline: false)).to eq(COLORIZED)
-        ensure
-          stub_tty!
-        end
+        stub_tty! false
+        expect(@arr.ai(multiline: false)).to eq(COLORIZED)
+      ensure
+        stub_tty!
       end
     end
   end

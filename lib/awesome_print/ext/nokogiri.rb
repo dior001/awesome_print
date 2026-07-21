@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -5,7 +7,6 @@
 #------------------------------------------------------------------------------
 module AwesomePrint
   module Nokogiri
-
     def self.included(base)
       base.send :alias_method, :cast_without_nokogiri, :cast
       base.send :alias_method, :cast, :cast_with_nokogiri
@@ -24,17 +25,18 @@ module AwesomePrint
 
     #------------------------------------------------------------------------------
     def awesome_nokogiri_xml_node(object)
-      if object.is_a?(::Nokogiri::XML::NodeSet) && object.empty?
-        return '[]'
-      end
+      return '[]' if object.is_a?(::Nokogiri::XML::NodeSet) && object.empty?
+
       xml = object.to_xml(indent: 2)
       #
       # Colorize tag, id/class name, and contents.
       #
-      xml.gsub!(/(<)(\/?[A-Za-z1-9]+)/) { |tag| "#{$1}#{colorize($2, :keyword)}" }
+      xml.gsub!(%r{(<)(/?[A-Za-z1-9]+)}) do |_tag|
+        "#{::Regexp.last_match(1)}#{colorize(::Regexp.last_match(2), :keyword)}"
+      end
       xml.gsub!(/(id|class)="[^"]+"/i) { |id| colorize(id, :class) }
       xml.gsub!(/>([^<]+)</) do |contents|
-        contents = colorize($1, :trueclass) if contents && !contents.empty?
+        contents = colorize(::Regexp.last_match(1), :trueclass) if contents && !contents.empty?
         ">#{contents}<"
       end
       xml
@@ -42,4 +44,4 @@ module AwesomePrint
   end
 end
 
-AwesomePrint::Formatter.send(:include, AwesomePrint::Nokogiri)
+AwesomePrint::Formatter.include AwesomePrint::Nokogiri

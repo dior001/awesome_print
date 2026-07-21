@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -6,34 +8,52 @@
 require 'awesome_print/formatters'
 
 module AwesomePrint
+  # Formatter turns a single object into its formatted string. It owns the
+  # dispatch table mapping a "type" (see {AwesomePrint::Inspector#printable})
+  # to a dedicated +awesome_*+ formatter, and is the extension point used by
+  # the plugins under +lib/awesome_print/ext+, which alias {#cast} to inject
+  # their own types (ActiveRecord, Mongoid, Nokogiri, ...).
   class Formatter
     include Colorize
 
     attr_reader :inspector, :options
 
-    CORE_FORMATTERS = [:array, :bigdecimal, :class, :dir, :file, :hash, :method, :rational, :set, :struct, :unboundmethod]
+    # Types that have a built-in +awesome_<type>+ formatter method.
+    CORE_FORMATTERS = %i[array bigdecimal class dir file hash method rational set struct
+                         unboundmethod].freeze
 
+    # @param inspector [AwesomePrint::Inspector] the inspector driving this run;
+    #   its options and indentation are shared with the formatter.
     def initialize(inspector)
       @inspector   = inspector
       @options     = inspector.options
     end
 
-    # Main entry point to format an object.
+    # Format +object+ by dispatching to the formatter for +type+, falling back
+    # to {#awesome_self} (which uses +object.inspect+) for unknown types.
+    #
+    # @param object [Object] the object to format.
+    # @param type [Symbol, nil] the printable type, as computed by the inspector.
+    # @return [String] the formatted representation.
     #------------------------------------------------------------------------------
     def format(object, type = nil)
       core_class = cast(object, type)
-      awesome = if core_class != :self
-        send(:"awesome_#{core_class}", object) # Core formatters.
-      else
+      if core_class == :self
         awesome_self(object, type) # Catch all that falls back to object.inspect.
+      else
+        send(:"awesome_#{core_class}", object) # Core formatters.
       end
-      awesome
     end
 
-    # Hook this when adding custom formatters. Check out lib/awesome_print/ext
-    # directory for custom formatters that ship with awesome_print.
+    # Map an object and its type to the name of the formatter to use. Plugins
+    # override (alias) this method to recognize their own classes; see the
+    # extensions in +lib/awesome_print/ext+.
+    #
+    # @param _object [Object] the object being formatted (used by plugins).
+    # @param type [Symbol] the printable type.
+    # @return [Symbol] a core formatter name, or +:self+ for the fallback.
     #------------------------------------------------------------------------------
-    def cast(object, type)
+    def cast(_object, type)
       CORE_FORMATTERS.include?(type) ? type : :self
     end
 
@@ -47,7 +67,11 @@ module AwesomePrint
       elsif (hash = convert_to_hash(object))
         awesome_hash(hash)
       else
+        # Some objects (deliberately or via bugs) return nil from #inspect, so
+        # coerce to a string rather than passing nil down to the formatter.
+        # rubocop:disable Lint/RedundantTypeConversion
         awesome_simple(object.inspect.to_s, type, @inspector)
+        # rubocop:enable Lint/RedundantTypeConversion
       end
     end
 
@@ -90,7 +114,7 @@ module AwesomePrint
     def awesome_method(m)
       Formatters::MethodFormatter.new(m, @inspector).format
     end
-    alias :awesome_unboundmethod :awesome_method
+    alias awesome_unboundmethod awesome_method
 
     def awesome_class(c)
       Formatters::ClassFormatter.new(c, @inspector).format

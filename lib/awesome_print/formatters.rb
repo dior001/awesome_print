@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module AwesomePrint
   module Formatters
     require 'awesome_print/formatters/object_formatter'
@@ -12,4 +14,3 @@ module AwesomePrint
     require 'awesome_print/colorize'
   end
 end
-

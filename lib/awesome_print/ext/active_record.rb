@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -5,7 +7,6 @@
 #------------------------------------------------------------------------------
 module AwesomePrint
   module ActiveRecord
-
     def self.included(base)
       base.send :alias_method, :cast_without_active_record, :cast
       base.send :alias_method, :cast, :cast_with_active_record
@@ -15,7 +16,7 @@ module AwesomePrint
     #------------------------------------------------------------------------------
     def cast_with_active_record(object, type)
       cast = cast_without_active_record(object, type)
-      return cast if !defined?(::ActiveRecord::Base)
+      return cast unless defined?(::ActiveRecord::Base)
 
       if object.is_a?(::ActiveRecord::Base)
         cast = :active_record_instance
@@ -41,32 +42,37 @@ module AwesomePrint
     #
     #------------------------------------------------------------------------------
     def awesome_active_record_instance(object)
-      return object.inspect if !defined?(::ActiveSupport::OrderedHash)
+      return object.inspect unless defined?(::ActiveSupport)
       return awesome_object(object) if @options[:raw]
 
-      data = if object.class.column_names != object.attributes.keys
-               object.attributes
-             else
-               object.class.column_names.inject(::ActiveSupport::OrderedHash.new) do |hash, name|
-                 if object.has_attribute?(name) || object.new_record?
-                   value = object.respond_to?(name) ? object.send(name) : object.read_attribute(name)
-                   hash[name.to_sym] = value
-                 end
-                 hash
-               end
-             end
-      "#{object} #{awesome_hash(data)}"
+      "#{object} #{awesome_hash(active_record_attributes_hash(object))}"
+    end
+
+    # Build a hash of an ActiveRecord instance's attributes. When the record
+    # carries columns that are not part of its schema (ex. a `SELECT` with
+    # custom columns) the raw attribute hash is returned as-is; otherwise the
+    # schema column order is honored.
+    #------------------------------------------------------------------------------
+    def active_record_attributes_hash(object)
+      return object.attributes if object.class.column_names != object.attributes.keys
+
+      object.class.column_names.each_with_object({}) do |name, hash|
+        next unless object.has_attribute?(name) || object.new_record?
+
+        hash[name.to_sym] = object.respond_to?(name) ? object.send(name) : object.read_attribute(name)
+      end
     end
 
     # Format ActiveRecord class object.
     #------------------------------------------------------------------------------
     def awesome_active_record_class(object)
-      return object.inspect if !defined?(::ActiveSupport::OrderedHash) || !object.respond_to?(:columns) || object.to_s == 'ActiveRecord::Base'
+      if !defined?(::ActiveSupport) || !object.respond_to?(:columns) || object.to_s == 'ActiveRecord::Base'
+        return object.inspect
+      end
       return awesome_class(object) if object.respond_to?(:abstract_class?) && object.abstract_class?
 
-      data = object.columns.inject(::ActiveSupport::OrderedHash.new) do |hash, c|
-        hash[c.name.to_sym] = c.type
-        hash
+      data = object.columns.to_h do |c|
+        [c.name.to_sym, c.type]
       end
 
       name = "class #{awesome_simple(object.to_s, :class)}"
@@ -78,26 +84,17 @@ module AwesomePrint
     # Format ActiveModel error object.
     #------------------------------------------------------------------------------
     def awesome_active_model_error(object)
-      return object.inspect if !defined?(::ActiveSupport::OrderedHash)
+      return object.inspect unless defined?(::ActiveSupport)
       return awesome_object(object) if @options[:raw]
 
-      object_dump = object.marshal_dump.first
-      data = if object_dump.class.column_names != object_dump.attributes.keys
-               object_dump.attributes
-             else
-               object_dump.class.column_names.inject(::ActiveSupport::OrderedHash.new) do |hash, name|
-                 if object_dump.has_attribute?(name) || object_dump.new_record?
-                   value = object_dump.respond_to?(name) ? object_dump.send(name) : object_dump.read_attribute(name)
-                   hash[name.to_sym] = value
-                 end
-                 hash
-               end
-             end
-
-      data.merge!({details: object.details, messages: object.messages})
+      # ActiveModel::Errors#marshal_dump was removed in Rails 7/8; reach the
+      # model the errors belong to through its @base instance variable instead.
+      base = object.instance_variable_get(:@base)
+      data = active_record_attributes_hash(base)
+      data.merge!(details: object.details, messages: object.messages)
       "#{object} #{awesome_hash(data)}"
     end
   end
 end
 
-AwesomePrint::Formatter.send(:include, AwesomePrint::ActiveRecord)
+AwesomePrint::Formatter.include AwesomePrint::ActiveRecord

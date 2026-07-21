@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -8,37 +10,35 @@
 #   $ rake spec                   # Entire spec suite.
 #   $ rspec spec/objects_spec.rb  # Individual spec file.
 #
-# NOTE: To successfully run specs with Ruby 1.8.6 the older versions of
-# Bundler and RSpec gems are required:
-#
-# $ gem install bundler -v=1.0.2
-# $ gem install rspec -v=2.6.0
-#
+# Coverage is collected via SimpleCov; require it before anything else so it
+# can observe every file that gets loaded.
 
-# require 'simplecov'
-# SimpleCov.start
+require 'simplecov'
 
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 
-Dir[File.dirname(__FILE__) + '/support/**/*.rb'].each do |file|
+Dir[File.dirname(__FILE__) + '/support/**/*.rb'].sort.each do |file|
   require file
 end
 
 ExtVerifier.require_dependencies!(
-  %w(
+  %w[
     rails
     active_record
     action_view
     active_support/all
     mongoid
-    mongo_mapper
-    ripple nobrainer
-  )
+    sequel
+  ]
 )
 require 'nokogiri'
 require 'ostruct'
 require 'awesome_print'
+
+# version.rb is required by the gemspec (which Bundler loads) before SimpleCov
+# starts, so re-load it here to let coverage observe its (trivial) lines.
+load File.expand_path('../lib/awesome_print/version.rb', __dir__)
 
 RSpec.configure do |config|
   config.disable_monkey_patching!
@@ -59,7 +59,7 @@ RSpec.configure do |config|
 
   # Run before all examples. Using suite or all will not work as stubs are
   # killed after each example ends.
-  config.before(:each) do |_example|
+  config.before do |_example|
     stub_dotfile!
   end
 end

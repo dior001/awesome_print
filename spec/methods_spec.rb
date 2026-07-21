@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 RSpec.describe 'Single method' do
@@ -129,6 +131,7 @@ RSpec.describe 'Object methods' do
     it 'index: should handle object.protected_methods' do
       class Hello
         protected
+
         def m1; end
         def m2; end
       end
@@ -138,6 +141,7 @@ RSpec.describe 'Object methods' do
     it 'no index: should handle object.protected_methods' do
       class Hello
         protected
+
         def m3(a, b); end
       end
       if RUBY_VERSION < '1.9.2'
@@ -152,6 +156,7 @@ RSpec.describe 'Object methods' do
     it 'index: should handle object.private_methods' do
       class Hello
         private
+
         def m1; end
         def m2; end
       end
@@ -164,6 +169,7 @@ RSpec.describe 'Object methods' do
     it 'no index: should handle object.private_methods' do
       class Hello
         private
+
         def m3(a, b); end
       end
       out = Hello.new.private_methods.ai(plain: true).split("\n").grep(/m\d/)
@@ -259,6 +265,7 @@ RSpec.describe 'Class methods' do
     it 'index: should handle class.protected_instance_methods' do
       class Hello
         protected
+
         def m1; end
         def m2; end
       end
@@ -270,6 +277,7 @@ RSpec.describe 'Class methods' do
     it 'no index: should handle class.protected_instance_methods' do
       class Hello
         protected
+
         def m3(a, b); end
       end
       out = Hello.protected_instance_methods.ai(plain: true, index: false).split("\n").grep(/m\d/)
@@ -285,6 +293,7 @@ RSpec.describe 'Class methods' do
     it 'index: should handle class.private_instance_methods' do
       class Hello
         private
+
         def m1; end
         def m2; end
       end
@@ -296,6 +305,7 @@ RSpec.describe 'Class methods' do
     it 'no index: should handle class.private_instance_methods' do
       class Hello
         private
+
         def m3(a, b); end
       end
       out = Hello.private_instance_methods.ai(plain: true, index: false).split("\n").grep(/m\d/)
@@ -336,7 +346,8 @@ if RUBY_VERSION >= '1.9.2'
 
     it ':opt' do
       class Hello
-        def m1(a, b = 1, c = 2); end # m1(a, *b, *c)
+        # m1(a, *b, *c)
+        def m1(a, b = 1, c = 2); end
       end
       out = Hello.new.methods.ai(plain: true).split("\n").grep(/m1/)
       expect(out.first).to match(/^\s+\[\s*\d+\]\s+m1\(a, \*b, \*c\)\s+Hello$/)
@@ -344,7 +355,8 @@ if RUBY_VERSION >= '1.9.2'
 
     it ':rest' do
       class Hello
-        def m1(*a); end # m1(*a)
+        # m1(*a)
+        def m1(*a); end
       end
       out = Hello.new.methods.ai(plain: true).split("\n").grep(/m1/)
       expect(out.first).to match(/^\s+\[\s*\d+\]\s+m1\(\*a\)\s+Hello$/)
@@ -352,7 +364,8 @@ if RUBY_VERSION >= '1.9.2'
 
     it ':block' do
       class Hello
-        def m1(a, b = nil, &blk); end # m1(a, *b, &blk)
+        # m1(a, *b, &blk)
+        def m1(a, b = nil, &blk); end
       end
       out = Hello.new.methods.ai(plain: true).split("\n").grep(/m1/)
       expect(out.first).to match(/^\s+\[\s*\d+\]\s+m1\(a, \*b, &blk\)\s+Hello$/)
@@ -381,10 +394,11 @@ RSpec.describe 'Methods arrays' do
       def self.m1; end
       def self.m2; end
     end
+
     class World
       def self.m1; end
     end
-    out = (Hello.methods & World.methods - Class.methods).ai(plain: true)
+    out = (Hello.methods & (World.methods - Class.methods)).ai(plain: true)
     expect(out).to eq("[\n    [0] m1() Hello\n]")
   end
 
@@ -407,8 +421,8 @@ RSpec.describe 'Methods arrays' do
       def self.m_two; end
     end
 
-    out = Hello.methods.sort.grep(/^m_(.+)$/) { $1.to_sym }
-    expect(out).to eq([:one, :two])
+    out = Hello.methods.sort.grep(/^m_(.+)$/) { Regexp.last_match(1).to_sym }
+    expect(out).to eq(%i[one two])
   end
 
   it 'obj1.methods.grep(pattern, &block) should be awesome printed' do
@@ -420,27 +434,40 @@ RSpec.describe 'Methods arrays' do
       def self.one; end
     end
 
-    out = Hello.methods.grep(/^m(\d)$/) { %w(none one)[$1.to_i] }.ai(plain: true)
+    out = Hello.methods.grep(/^m(\d)$/) { %w[none one][Regexp.last_match(1).to_i] }.ai(plain: true)
     expect(out).to eq("[\n    [0] none() Hello\n    [1]  one() Hello\n]")
+  end
+
+  # A Symbol#to_proc block (`&:to_s`) is a C-level proc with no usable binding,
+  # so grep must rescue the "Can't create Binding from C level Proc" error
+  # rather than blowing up.
+  it 'obj1.methods.grep(pattern, &c_level_proc) rescues the missing binding' do
+    class Hello
+      def self.m1; end
+      def self.m2; end
+    end
+
+    expect(Hello.methods.grep(/^m\d$/, &:to_s).sort).to eq(%w[m1 m2])
   end
 
   # See https://github.com/awesome-print/awesome_print/issues/30 for details.
   it 'grepping methods and converting them to_sym should work as expected' do
     class Hello
       private
+
       def him; end
 
       def his
-        private_methods.grep(/^h..$/) { |n| n.to_sym }
+        private_methods.grep(/^h..$/, &:to_sym)
       end
 
       def her
-        private_methods.grep(/^.e.$/) { |n| n.to_sym }
+        private_methods.grep(/^.e.$/, &:to_sym)
       end
     end
 
     hello = Hello.new
-    expect((hello.send(:his) - hello.send(:her)).sort_by { |x| x.to_s }).to eq([:him, :his])
+    expect((hello.send(:his) - hello.send(:her)).sort_by(&:to_s)).to eq(%i[him his])
   end
 
   it 'appending garbage to methods array should not raise error' do

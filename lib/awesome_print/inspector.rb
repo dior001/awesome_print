@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -6,46 +8,59 @@
 require_relative 'indentator'
 
 module AwesomePrint
+  # Inspector is the entry point that {Kernel#ai} uses to format an object.
+  #
+  # It merges the built-in defaults with any +~/.aprc+ overrides and the
+  # per-call +options+, then dispatches to {AwesomePrint::Formatter} while
+  # tracking already-visited objects so that self-referential arrays, hashes
+  # and structs are rendered as +[...]+ / +{...}+ rather than recursing
+  # forever.
   class Inspector
     attr_accessor :options, :indentator
 
+    # Thread-local key under which the stack of object ids currently being
+    # formatted is stored (used for recursion detection).
     AP = :__awesome_print__
 
+    # @param options [Hash] per-call overrides merged on top of the defaults
+    #   and +~/.aprc+. Recognized keys and their defaults are listed inline
+    #   below (e.g. +:indent+, +:plain+, +:sort_keys+, +:limit+, +:html+,
+    #   +:raw+, +:color+).
     def initialize(options = {})
       @options = {
-        indent:        4,      # Number of spaces for indenting.
-        index:         true,   # Display array indices.
-        html:          false,  # Use ANSI color codes rather than HTML.
-        multiline:     true,   # Display in multiple lines.
-        plain:         false,  # Use colors.
-        raw:           false,  # Do not recursively format instance variables.
-        sort_keys:     false,  # Do not sort hash keys.
-        sort_vars:     true,   # Sort instance variables.
-        limit:         false,  # Limit arrays & hashes. Accepts bool or int.
-        ruby19_syntax: false,  # Use Ruby 1.9 hash syntax in output.
-        class_name:    :class, # Method used to get Instance class name.
-        object_id:     true,   # Show object_id.
+        indent: 4, # Number of spaces for indenting.
+        index: true, # Display array indices.
+        html: false, # Use ANSI color codes rather than HTML.
+        multiline: true, # Display in multiple lines.
+        plain: false, # Use colors.
+        raw: false, # Do not recursively format instance variables.
+        sort_keys: false,  # Do not sort hash keys.
+        sort_vars: true,   # Sort instance variables.
+        limit: false, # Limit arrays & hashes. Accepts bool or int.
+        ruby19_syntax: false, # Use Ruby 1.9 hash syntax in output.
+        class_name: :class, # Method used to get Instance class name.
+        object_id: true, # Show object_id.
         color: {
-          args:       :pale,
-          array:      :white,
+          args: :pale,
+          array: :white,
           bigdecimal: :blue,
-          class:      :yellow,
-          date:       :greenish,
+          class: :yellow,
+          date: :greenish,
           falseclass: :red,
-          fixnum:     :blue,
-          integer:    :blue,
-          float:      :blue,
-          hash:       :pale,
-          keyword:    :cyan,
-          method:     :purpleish,
-          nilclass:   :red,
-          rational:   :blue,
-          string:     :yellowish,
-          struct:     :pale,
-          symbol:     :cyanish,
-          time:       :greenish,
-          trueclass:  :green,
-          variable:   :cyanish
+          fixnum: :blue,
+          integer: :blue,
+          float: :blue,
+          hash: :pale,
+          keyword: :cyan,
+          method: :purpleish,
+          nilclass: :red,
+          rational: :blue,
+          string: :yellowish,
+          struct: :pale,
+          symbol: :cyanish,
+          time: :greenish,
+          trueclass: :green,
+          variable: :cyanish
         }
       }
 
@@ -58,15 +73,24 @@ module AwesomePrint
       Thread.current[AP] ||= []
     end
 
+    # @return [Integer] the current indentation width, in spaces.
     def current_indentation
       indentator.indentation
     end
 
+    # Runs +block+ with the indentation increased by one level, restoring it
+    # afterwards.
+    # @yield the block to run at the deeper indentation.
     def increase_indentation(&block)
       indentator.indent(&block)
     end
 
-    # Dispatcher that detects data nesting and invokes object-aware formatter.
+    # Format +object+, returning its awesome-printed string. Objects already on
+    # the current formatting stack are rendered as a nesting placeholder
+    # (+[...]+, +{...}+) to guard against infinite recursion.
+    #
+    # @param object [Object] the object to format.
+    # @return [String] the formatted representation.
     #---------------------------------------------------------------------------
     def awesome(object)
       if Thread.current[AP].include?(object.object_id)
@@ -81,17 +105,19 @@ module AwesomePrint
       end
     end
 
-    # Return true if we are to colorize the output.
+    # Whether output should be colorized. True when colors are forced (see
+    # {AwesomePrint.force_colors!}) or when writing to a color-capable TTY.
+    # @return [Boolean]
     #---------------------------------------------------------------------------
     def colorize?
       AwesomePrint.force_colors ||= false
       AwesomePrint.force_colors || (
-        STDOUT.tty? && (
+        $stdout.tty? && (
           (
-            ENV['TERM'] &&
+            ENV.fetch('TERM', nil) &&
             ENV['TERM'] != 'dumb'
           ) ||
-          ENV['ANSICON']
+          ENV.fetch('ANSICON', nil)
         )
       )
     end
@@ -145,14 +171,12 @@ module AwesomePrint
     # predictable values
     #---------------------------------------------------------------------------
     def load_dotfile
-      dotfile = File.join(ENV['HOME'], '.aprc')
+      dotfile = File.join(ENV.fetch('HOME', nil), '.aprc')
       load dotfile if dotfile_readable?(dotfile)
     end
 
-    def dotfile_readable? dotfile
-      if @@dotfile_readable.nil? || @@dotfile != dotfile
-        @@dotfile_readable = File.readable?(@@dotfile = dotfile)
-      end
+    def dotfile_readable?(dotfile)
+      @@dotfile_readable = File.readable?(@@dotfile = dotfile) if @@dotfile_readable.nil? || @@dotfile != dotfile
       @@dotfile_readable
     end
     @@dotfile_readable = @@dotfile = nil
@@ -162,8 +186,8 @@ module AwesomePrint
     def merge_custom_defaults!
       load_dotfile
       merge_options!(AwesomePrint.defaults) if AwesomePrint.defaults.is_a?(Hash)
-    rescue => e
-      $stderr.puts "Could not load '.aprc' from ENV['HOME']: #{e}"
+    rescue StandardError => e
+      warn "Could not load '.aprc' from ENV['HOME']: #{e}"
     end
   end
 end

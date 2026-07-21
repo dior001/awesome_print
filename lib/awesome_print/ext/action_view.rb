@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2010-2016 Michael Dvorkin and contributors
 #
 # Awesome Print is freely distributable under the terms of MIT license.
@@ -19,4 +21,4 @@ module AwesomePrint
   end
 end
 
-ActionView::Base.send(:include, AwesomePrint::ActionView)
+ActionView::Base.include AwesomePrint::ActionView

@@ -1,9 +1,20 @@
+# frozen_string_literal: true
+
 autoload :CGI, 'cgi'
 
 module AwesomePrint
+  # Mixin providing {#colorize}, shared by the formatter and every plugin.
+  # It applies the configured ANSI color (or HTML markup) for a given semantic
+  # +type+ while honoring the +:plain+, +:html+ and color options, and stays
+  # compatible with gems (such as +colorize+) that redefine +String+ color
+  # methods.
   module Colorize
-
-    # Pick the color and apply it to the given string as necessary.
+    # Apply the color configured for +type+ to +str+ (HTML-escaping first when
+    # the +:html+ option is set).
+    #
+    # @param str [String] the text to colorize.
+    # @param type [Symbol] the semantic color key (e.g. +:string+, +:class+).
+    # @return [String] the colorized (or plain) string.
     #------------------------------------------------------------------------------
     def colorize(str, type)
       str = CGI.escapeHTML(str) if options[:html]
@@ -16,7 +27,7 @@ module AwesomePrint
       elsif str.method(options[:color][type]).arity == -1 # Accepts html parameter.
         str.send(options[:color][type], options[:html])
       else
-        str = %Q|<kbd style="color:#{options[:color][type]}">#{str}</kbd>| if options[:html]
+        str = %(<kbd style="color:#{options[:color][type]}">#{str}</kbd>) if options[:html]
         str.send(options[:color][type])
       end
     end

@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require_relative 'base_formatter'
 require 'shellwords'
 
 module AwesomePrint
   module Formatters
+    # Formats a File, appending an 'ls -alF' style listing.
     class FileFormatter < BaseFormatter
-
       attr_reader :file, :inspector, :options
 
       def initialize(file, inspector)
