@@ -69,9 +69,8 @@ module AwesomePrint
       else
         # Some objects (deliberately or via bugs) return nil from #inspect, so
         # coerce to a string rather than passing nil down to the formatter.
-        # rubocop:disable Lint/RedundantTypeConversion
+        # rubocop:disable-next Lint/RedundantTypeConversion
         awesome_simple(object.inspect.to_s, type, @inspector)
-        # rubocop:enable Lint/RedundantTypeConversion
       end
     end
 

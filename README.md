@@ -10,7 +10,7 @@ exposing their internal structure with proper indentation. Rails ActiveRecord
 objects and usage within Rails templates are supported via included mixins.
 
 __NOTE__: awesome_print v2.0 *requires* Ruby 2.7 or later and is tested against
-Ruby 2.7–3.4 and Rails 6.1–8.x. The abandoned MongoMapper, Ripple and NoBrainer
+Ruby 2.7–4.0 and Rails 6.1–8.x. The abandoned MongoMapper, Ripple and NoBrainer
 integrations were removed in v2.0; the supported integrations are ActiveRecord /
 ActiveSupport / ActionView, Mongoid, Sequel, Nokogiri and OpenStruct.
 

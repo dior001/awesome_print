@@ -90,8 +90,8 @@ RSpec.describe 'Objects' do
 
     it 'without the plain options print the colorized values' do
       class Hello
-        attr_reader   :abra
-        attr_writer   :ca
+        attr_reader :abra
+        attr_writer :ca
 
         def initialize
           @abra = 1
@@ -115,8 +115,8 @@ RSpec.describe 'Objects' do
 
     it 'with multine as false show inline values' do
       class Hello
-        attr_reader   :abra
-        attr_writer   :ca
+        attr_reader :abra
+        attr_writer :ca
 
         def initialize
           @abra = 1
